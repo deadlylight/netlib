@@ -1,29 +1,32 @@
 #pragma once
-#include <memory>
+#include <queue>
+#include <mutex>
+#include <condition_variable>
+#include <itcpserver.hpp>
 #include "imuxevent.hpp"
-
-class IAddr;
-class ITcpConnectionHandler;
 
 using namespace std;
 
-class CTcpServer : public IMuxEvent
+class CTcpServer : public ITcpServer, public IMuxEvent
 {
-    friend class CTcpServerFactory;
-
 private:
-    bool mReady;
-    int mSk;
-    int mLastError;
-    shared_ptr<const IAddr> mAddr;
-    shared_ptr<ITcpConnectionHandler> mTcpConnectionHandler;
+    int mListenSk;
+    queue<int> mNewSks;
+    mutex mSksMutex;
+    condition_variable mSksCond;
+
+    void addNewSk(int);
+    int getOneSk(bool);
+    shared_ptr<ITcpConnection> makeNewConnection(int);
 
 public:
-    CTcpServer();
+    CTcpServer(int);
     ~CTcpServer();
-    bool initTcpServer();
-    bool isReady() override;
+
+    shared_ptr<ITcpConnection> getNewConnection(bool) override;
+
     int getFd() override;
+    uint32_t getMuxEvents() override;
     void onError() override;
     void onReadable() override;
     void onWritable() override;

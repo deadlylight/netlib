@@ -3,13 +3,14 @@
 
 using namespace std;
 
-class ITcpDataHandler;
+class IMsgIn;
+class IMsgOut;
 
 class ITcpConnection
 {
 public:
     virtual ~ITcpConnection() = default;
-    virtual void registerDataHandler(shared_ptr<ITcpDataHandler>) = 0;
-    virtual IAddr &getLocalAddr() = 0;
-    virtual IAddr &getRemoteAddr() = 0;
+    virtual shared_ptr<IMsgIn> readMsg(bool = false) = 0;     // true for non-block
+    virtual bool writeMsg(shared_ptr<IMsgOut>) = 0;                // would fail is queue full
+    virtual void closeTcpConnection() = 0;
 };

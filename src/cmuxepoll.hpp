@@ -1,27 +1,33 @@
 #pragma once
-#include <imux.hpp>
+#include <map>
+#include <memory>
+#include <mutex>
+#include "imuxevent.hpp"
+#include "cmuxgeneral.hpp"
 
-struct epoll_event;
+using namespace std;
+
 class IMuxEvent;
 
-class CMuxEpoll : public IMux
+class CMuxEpoll : public CMuxGeneral
 {
-private:
-    int mPollFd;
-    bool mStopped;
+    friend class CMuxFactory;
 
 private:
-    bool createPollFd();
-    bool invokeMainLoop();
-    void hanldeEvent(epoll_event &inEvent);
-    bool registerMuxEvent(shared_ptr<IMuxEvent> &inMuxEvent, uint32_t inEventBits);
+    int mEpollFd;
+
+private:
+    bool makeEpollFd();
+    void epollMainLoop();
+    void handleEvent(void *);
+    bool addFd(int);
+
+protected:
+    bool initMux() override;
+    void mainLoop() override;
+    bool registerMux(int) override;
 
 public:
     CMuxEpoll();
     ~CMuxEpoll();
-
-    bool startMux() override;
-
-    bool registerTcpServer(shared_ptr<const IAddr>, shared_ptr<ITcpConnectionHandler>) override;
-    bool registerTcpClient(shared_ptr<const IAddr>, shared_ptr<const IAddr>, shared_ptr<ITcpConnectionHandler>) override;
 };

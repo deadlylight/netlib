@@ -1,113 +1,114 @@
-#include <unistd.h>
 #include <sys/epoll.h>
-#include "cmuxepoll.hpp"
-#include "imuxevent.hpp"
-#include "ctcpserverfactory.hpp"
-#include "ctcpclientfactory.hpp"
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <thread>
+#include <ilogger.hpp>
+#include <cmuxepoll.hpp>
 
 CMuxEpoll::CMuxEpoll()
-: mPollFd(-1), mStopped(false)
+    : mEpollFd(-1)
 {
-
 }
 
 CMuxEpoll::~CMuxEpoll()
 {
-    close(mPollFd);
+    close(mEpollFd);
 }
 
-bool CMuxEpoll::createPollFd()
+bool CMuxEpoll::initMux()
 {
-    mPollFd = epoll_create(1024);
-    if (mPollFd < 0)
+    return makeEpollFd();
+}
+
+void CMuxEpoll::mainLoop()
+{
+    ILogger::inst().log(ELogDbg, "in CMuxEpoll::mainLoop, mEpollFd=%d\n", mEpollFd);
+    epollMainLoop();
+    ILogger::inst().log(ELogDbg, "out CMuxEpoll::mainLoop\n");
+}
+
+bool CMuxEpoll::registerMux(int inFd)
+{
+    return addFd(inFd);
+}
+
+bool CMuxEpoll::makeEpollFd()
+{
+    mEpollFd = epoll_create(1024);
+    if (mEpollFd < 0)
     {
         return false;
     }
     return true;
 }
 
-bool CMuxEpoll::invokeMainLoop()
+void CMuxEpoll::epollMainLoop()
 {
     while (!mStopped)
     {
-        epoll_event vEvent = {0};
-        int vRet = epoll_wait(mPollFd, &vEvent, 1, -1);
+        epoll_event vEvent;
+        memset(&vEvent, 0, sizeof(vEvent));
+        int vRet = epoll_wait(mFdCount, &vEvent, 1, -1);
         if (vRet < 0)
         {
             if (errno == EINTR)
             {
+                ILogger::inst().log(ELogDbg, "epollMainLoop EINTR\n");
                 continue;
             }
             else
             {
+                ILogger::inst().log(ELogDbg, "epollMainLoop error=%d(%s)\n", errno, strerror(errno));
                 mStopped = true;
-                return false;
+                break;
             }
         }
         else if (vRet == 0)
         {
-            // timeout
+            continue;
         }
         else
         {
-            hanldeEvent(vEvent);
+            handleEvent(reinterpret_cast<void *>(&vEvent));
         }
     }
-    return true;
 }
 
-void CMuxEpoll::hanldeEvent(epoll_event &inEvent)
+void CMuxEpoll::handleEvent(void *inEvent)
 {
-    shared_ptr<IMuxEvent> *vMuxEvent = reinterpret_cast<shared_ptr<IMuxEvent> *>(inEvent.data.ptr);
-    if (inEvent.events & EPOLLERR)
+    epoll_event *vEvent = reinterpret_cast<epoll_event *>(inEvent);
+    int vFd = vEvent->data.fd;
+    uint32_t events = vEvent->events;
+    uint32_t vType = EMuxEventNone;
+    if (events & EPOLLERR)
     {
-        (*vMuxEvent)->onError();
+        vType |= EMuxEventError;
     }
-    else if (inEvent.events & EPOLLIN)
+    else if (events & EPOLLIN)
     {
-        (*vMuxEvent)->onReadable();
+        vType |= EMuxEventRead;
     }
-    else if (inEvent.events & EPOLLOUT)
+    else if (events & EPOLLOUT)
     {
-        (*vMuxEvent)->onWritable();
+        vType |= EMuxEventWrite;
     }
+    if (vType == EMuxEventNone)
+    {
+        return;
+    }
+    CMuxGeneral::handleEvent(vFd, vType);
 }
 
-bool CMuxEpoll::startMux()
+bool CMuxEpoll::addFd(int inFd)
 {
-    bool vRet = createPollFd();
-    if (!vRet)
-    {
-        return false;
-    }
-    return invokeMainLoop();  
-}
-
-bool CMuxEpoll::registerMuxEvent(shared_ptr<IMuxEvent> &inMuxEvent, uint32_t inEventBits)
-{
-    shared_ptr<IMuxEvent> *vMuxEvent = new shared_ptr<IMuxEvent>;
-    *vMuxEvent = inMuxEvent;
-
     epoll_event vEvent = {0};
-    vEvent.events = inEventBits;
-    vEvent.data.ptr = vMuxEvent;
-    int vRet = epoll_ctl(mPollFd, EPOLL_CTL_ADD, (*vMuxEvent)->getFd(), &vEvent);
+    vEvent.events = EPOLLIN;
+    vEvent.data.fd = inFd;
+    int vRet = epoll_ctl(mEpollFd, EPOLL_CTL_ADD, inFd, &vEvent);
     if (vRet < 0)
     {
-        delete vMuxEvent;
         return false;
     }
     return true;
-}
-
-bool CMuxEpoll::registerTcpServer(shared_ptr<const IAddr> inAddr, shared_ptr<ITcpConnectionHandler> inTcpHandler)
-{
-    shared_ptr<IMuxEvent> vMuxEvent = CTcpServerFactory::createTcpServer(inAddr, inTcpHandler);
-    return registerMuxEvent(vMuxEvent, EPOLLIN);
-}
-
-bool CMuxEpoll::registerTcpClient(shared_ptr<const IAddr> inBindAddr, shared_ptr<const IAddr> inRemoteAddr, shared_ptr<ITcpConnectionHandler> inTcpHandler)
-{
-    shared_ptr<IMuxEvent> vMuxEvent = CTcpClientFactory::createTcpClient(inBindAddr, inRemoteAddr, inTcpHandler);
-    return registerMuxEvent(vMuxEvent, EPOLLOUT);
 }

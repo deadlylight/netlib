@@ -1,70 +1,76 @@
-#include <cassert>
-#include <sys/types.h>
+#include <unistd.h>
 #include <sys/socket.h>
-#include <errno.h>
-#include <iaddr.hpp>
+#include <cassert>
 #include "ctcpserver.hpp"
+#include "ctcpconnection.hpp"
 
-CTcpServer::CTcpServer()
-    : mReady(false), mSk(-1), mLastError(0)
+CTcpServer::CTcpServer(int inSk)
+    : mListenSk(inSk)
 {
 }
 
 CTcpServer::~CTcpServer()
 {
+    close(mListenSk);
+    mListenSk = -1;
+    while (!mNewSks.empty())
+    {
+        int vSk = mNewSks.front();
+        mNewSks.pop();
+        close(vSk);
+    }
 }
 
-bool CTcpServer::initTcpServer()
+void CTcpServer::addNewSk(int inSk)
 {
-    mSk = socket(AF_INET, SOCK_STREAM, 0);
-    if (mSk < 0)
+    unique_lock<mutex> vLock(mSksMutex);
+    mNewSks.push(inSk);
+    mSksCond.notify_one();
+}
+
+int CTcpServer::getOneSk(bool inNonBlock)
+{
+    unique_lock<mutex> vLock(mSksMutex);
+    while (mNewSks.size() == 0)
     {
-        mLastError = errno;
-        return false;
+        if (inNonBlock)
+        {
+            return -1;
+        }
+        else
+        {
+            mSksCond.wait(vLock);
+        }
     }
-    int vRet = fcntl(mSk, F_SETFL, O_NONBLOCK);
-    if (vRet < 0)
+    int vSk = mNewSks.front();
+    mNewSks.pop();
+    return vSk;
+}
+
+shared_ptr<ITcpConnection> CTcpServer::makeNewConnection(int inSk)
+{
+    shared_ptr<CTcpConnection> vConn = make_shared<CTcpConnection>(inSk);
+    return vConn;
+}
+
+shared_ptr<ITcpConnection> CTcpServer::getNewConnection(bool inNonBlock)
+{
+    int vSk = getOneSk(inNonBlock);
+    if (vSk < 0)
     {
-        mLastError = errno;
-        return false;
+        return nullptr;
     }
-    sockaddr *vSockAddr = nullptr;
-    uint32_t vSockSize = 0;
-    sockaddr_in vSockAddr4 = {0};
-    sockaddr_in6 vSockAddr6 = {0};
-    if (mAddr->getType() == IAddr::EAddrIpv4)
-    {
-        vSockAddr = &vSockAddr4;
-        vSockSize = sizeof(vSockAddr4);
-        vSockAddr4.sin_family = AF_INET;
-        vSockAddr4.sin_addr.s_addr = inet_addr(mAddr->getAddr().c_str());
-        vSockAddr4.sin_port = htons(mAddr->getPort());
-    }
-    else
-    {
-        //TODO
-        assert(0);
-    }
-    vRet = bind(mSk, vSockAddr, vSockSize);
-    if (vRet < 0)
-    {
-        mLastError = errno;
-        return false;
-    }
-    vRet = listen(mSk, 99);
-    if (vRet < 0)
-    {
-        mLastError = errno;
-        return false;
-    }
-    
-    isReady = true;
-    return true;
+    return makeNewConnection(vSk);
 }
 
 int CTcpServer::getFd()
 {
-    return mSk;
+    return mListenSk;
+}
+
+uint32_t CTcpServer::getMuxEvents()
+{
+    return EMuxEventRead;
 }
 
 void CTcpServer::onError()
@@ -73,15 +79,12 @@ void CTcpServer::onError()
 
 void CTcpServer::onReadable()
 {
-    sockaddr vSockAddr;
-    uint32_t vSockSize;
-    int vNewSk = accept(mSk, &vSockAddr, &vSockSize);
-    if (vNewSk < 0)
+    int vSk = accept(mListenSk, nullptr, nullptr);
+    if (vSk < 0)
     {
-        mLastError = errno;
         return;
     }
-    shared_ptr<ITcpConnection> vTcpConnection = CTcpConnectionFactory::createTcpConnection(mSk, vSockAddr, vSockSize);
+    addNewSk(vSk);
 }
 
 void CTcpServer::onWritable()

@@ -1,19 +1,16 @@
 #pragma once
-#include <cstdint>
 #include <memory>
+#include <string>
 
 using namespace std;
 
-class IAddr;
-class ITcpConnectionHandler;
+class ITcpServer;
+class ITcpConnection;
 
 class IMux
 {
 public:
     virtual ~IMux() = default;
-    virtual bool startMux() = 0;
-
-    virtual bool registerTcpServer(shared_ptr<const IAddr>, shared_ptr<ITcpConnectionHandler>) = 0;
-    virtual bool registerTcpClient(shared_ptr<const IAddr>, shared_ptr<const IAddr>, shared_ptr<ITcpConnectionHandler>) = 0;
-    virtual bool registerTcpConnection(shared_ptr<const IAddr>, shared_ptr<const IAddr>, shared_ptr<ITcpConnectionHandler>) = 0;
+    virtual shared_ptr<ITcpServer> makeTcpServer(uint16_t, const string = string()) = 0;
+    virtual shared_ptr<ITcpConnection> makeTcpClient(uint16_t, const string &, const string = string()) = 0;
 };
