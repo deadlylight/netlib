@@ -16,9 +16,19 @@ CMuxEpoll::~CMuxEpoll()
     close(mEpollFd);
 }
 
-bool CMuxEpoll::initMux()
+bool CMuxEpoll::startMux()
 {
-    return makeEpollFd();
+    return startMuxEpoll();
+}
+
+bool CMuxEpoll::startMuxEpoll(weak_ptr<CMuxEpoll> inMuxEpoll)
+{
+    bool vRet = makeEpollFd();
+    if (!vRet)
+    {
+        return false;
+    }
+    return CMuxGeneral::startMuxGeneral(inMuxEpoll);
 }
 
 void CMuxEpoll::mainLoop()
