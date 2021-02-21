@@ -31,9 +31,17 @@ bool CMuxGeneral::startMux()
     return true;
 }
 
-bool CMuxGeneral::stopMux()
+void CMuxGeneral::stopMux()
 {
-    return true;
+    mStopped = true;
+    sendStopMsg();
+}
+
+void CMuxGeneral::sendStopMsg()
+{
+    lock_guard<mutex> vGuard(mMakeMutex);
+    CCtlMsg vCtlMsg(*this);
+    vCtlMsg.makeStopCtlMsg();
 }
 
 shared_ptr<ITcpServer> CMuxGeneral::makeTcpServer(uint16_t inPort, const string inBindAddr)

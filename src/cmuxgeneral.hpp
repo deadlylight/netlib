@@ -16,6 +16,7 @@ class CMuxGeneral : public IMux
 {
     friend class CMuxFactory;
     friend class CMuxPipeEvent;
+    friend class CCtlMsg;
 
 public:
     class CMuxIpc
@@ -50,6 +51,7 @@ private:
     void startMuxThread();
     static void muxLoop(shared_ptr<CMuxGeneral>);
     bool registerTcpConnection(int, shared_ptr<IMuxEvent>);
+    void sendStopMsg();
 
 protected:
     shared_ptr<IMuxEvent> getMuxEvent(int);
@@ -64,7 +66,7 @@ public:
     CMuxGeneral();
     ~CMuxGeneral();
     bool startMux();
-    bool stopMux();
+    void stopMux() override;
     bool registerMuxEvent(shared_ptr<IMuxEvent>);
 
     shared_ptr<ITcpServer> makeTcpServer(uint16_t, const string) override;

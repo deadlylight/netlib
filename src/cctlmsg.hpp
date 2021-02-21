@@ -26,4 +26,5 @@ public:
     void handleCtlMsg(const SCtlMsg &);
     bool makeServerCtlMsg(uint16_t, const string &);
     bool makeClientCtlMsg(uint16_t, const string &, const string &);
+    void makeStopCtlMsg();
 };

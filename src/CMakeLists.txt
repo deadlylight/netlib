@@ -9,6 +9,7 @@ add_library(netlib SHARED
     cmuxpipeevent.cpp
     ctcpconnection.cpp
     ctcpserver.cpp
+    ctcpqueuefactory.cpp
     cctlmsg.cpp
     clogger.cpp
 )

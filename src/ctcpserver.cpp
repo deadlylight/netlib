@@ -1,11 +1,13 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <cassert>
+#include <itcpqueue.hpp>
+#include <ctcpqueuefactory.hpp>
 #include "ctcpserver.hpp"
 #include "ctcpconnection.hpp"
 
 CTcpServer::CTcpServer(int inSk)
-    : mListenSk(inSk)
+    : mListenSk(inSk), mQueue(CTcpQueueFactory::createTcpConnectionQueue())
 {
 }
 
@@ -13,38 +15,12 @@ CTcpServer::~CTcpServer()
 {
     close(mListenSk);
     mListenSk = -1;
-    while (!mNewSks.empty())
-    {
-        int vSk = mNewSks.front();
-        mNewSks.pop();
-        close(vSk);
-    }
 }
 
 void CTcpServer::addNewSk(int inSk)
 {
-    unique_lock<mutex> vLock(mSksMutex);
-    mNewSks.push(inSk);
-    mSksCond.notify_one();
-}
-
-int CTcpServer::getOneSk(bool inNonBlock)
-{
-    unique_lock<mutex> vLock(mSksMutex);
-    while (mNewSks.size() == 0)
-    {
-        if (inNonBlock)
-        {
-            return -1;
-        }
-        else
-        {
-            mSksCond.wait(vLock);
-        }
-    }
-    int vSk = mNewSks.front();
-    mNewSks.pop();
-    return vSk;
+    lock_guard<mutex> vGuard(mMutex);
+    mQueue->push(makeNewConnection(inSk));
 }
 
 shared_ptr<ITcpConnection> CTcpServer::makeNewConnection(int inSk)
@@ -53,14 +29,20 @@ shared_ptr<ITcpConnection> CTcpServer::makeNewConnection(int inSk)
     return vConn;
 }
 
-shared_ptr<ITcpConnection> CTcpServer::getNewConnection(bool inNonBlock)
+shared_ptr<ITcpConnectionQueue> CTcpServer::getQueue()
 {
-    int vSk = getOneSk(inNonBlock);
-    if (vSk < 0)
-    {
-        return nullptr;
-    }
-    return makeNewConnection(vSk);
+    lock_guard<mutex> vGuard(mMutex);
+    return mQueue;
+}
+void CTcpServer::setQueue(shared_ptr<ITcpConnectionQueue> inQueue)
+{
+    lock_guard<mutex> vGuard(mMutex);
+    //inQueue->move(*mQueue);
+    mQueue = inQueue;
+}
+
+void CTcpServer::shutdownTcpServer()
+{
 }
 
 int CTcpServer::getFd()

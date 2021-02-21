@@ -3,11 +3,13 @@
 
 using namespace std;
 
-class ITcpConnection;
+class ITcpConnectionQueue;
 
 class ITcpServer
 {
 public:
     virtual ~ITcpServer() = default;
-    virtual shared_ptr<ITcpConnection> getNewConnection(bool = false) = 0;  // true for non-block
+    virtual void setQueue(shared_ptr<ITcpConnectionQueue>) = 0;
+    virtual shared_ptr<ITcpConnectionQueue> getQueue() = 0;
+    virtual void shutdownTcpServer() = 0;
 };

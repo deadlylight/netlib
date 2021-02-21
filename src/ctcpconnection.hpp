@@ -1,17 +1,23 @@
 #pragma once
+#include <mutex>
 #include <itcpconnection.hpp>
 #include "imuxevent.hpp"
+
+using namespace std;
 
 class CTcpConnection : public ITcpConnection, public IMuxEvent
 {
 private:
     int mSk;
+    shared_ptr<ITcpMsgQueue> mQueue;
+    mutex mMutex;
 
 public:
     CTcpConnection(int);
     ~CTcpConnection();
 
-    shared_ptr<IMsgIn> readMsg(bool) override;
+    void setQueue(shared_ptr<ITcpMsgQueue>) override;
+    shared_ptr<ITcpMsgQueue> getQueue() override;
     bool writeMsg(shared_ptr<IMsgOut>) override;
     void closeTcpConnection() override;
 

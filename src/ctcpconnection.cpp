@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <itcpqueue.hpp>
 #include "ctcpconnection.hpp"
 
 CTcpConnection::CTcpConnection(int inSk)
@@ -12,9 +13,17 @@ CTcpConnection::~CTcpConnection()
     mSk = -1;
 }
 
-shared_ptr<IMsgIn> CTcpConnection::readMsg(bool)
+void CTcpConnection::setQueue(shared_ptr<ITcpMsgQueue> inQueue)
 {
-    return nullptr;
+    lock_guard<mutex> vGuard(mMutex);
+    //inQueue->move(*mQueue);
+    mQueue = inQueue;
+}
+
+shared_ptr<ITcpMsgQueue> CTcpConnection::getQueue()
+{
+    lock_guard<mutex> vGuard(mMutex);
+    return mQueue;
 }
 
 bool CTcpConnection::writeMsg(shared_ptr<IMsgOut>)
@@ -40,15 +49,12 @@ uint32_t CTcpConnection::getMuxEvents()
 
 void CTcpConnection::onError()
 {
-
 }
 
 void CTcpConnection::onReadable()
 {
-
 }
 
 void CTcpConnection::onWritable()
 {
-
 }

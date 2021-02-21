@@ -11,10 +11,10 @@ class CTcpServer : public ITcpServer, public IMuxEvent
 {
 private:
     int mListenSk;
-    queue<int> mNewSks;
-    mutex mSksMutex;
-    condition_variable mSksCond;
+    mutex mMutex;
+    shared_ptr<ITcpConnectionQueue> mQueue;
 
+private:
     void addNewSk(int);
     int getOneSk(bool);
     shared_ptr<ITcpConnection> makeNewConnection(int);
@@ -23,7 +23,9 @@ public:
     CTcpServer(int);
     ~CTcpServer();
 
-    shared_ptr<ITcpConnection> getNewConnection(bool) override;
+    void setQueue(shared_ptr<ITcpConnectionQueue>) override;
+    shared_ptr<ITcpConnectionQueue> getQueue() override;
+    void shutdownTcpServer() override;
 
     int getFd() override;
     uint32_t getMuxEvents() override;

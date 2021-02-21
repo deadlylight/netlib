@@ -49,7 +49,7 @@ void CMuxEpoll::epollMainLoop()
     {
         epoll_event vEvent;
         memset(&vEvent, 0, sizeof(vEvent));
-        int vRet = epoll_wait(mFdCount, &vEvent, 1, -1);
+        int vRet = epoll_wait(mEpollFd, &vEvent, 1, -1);
         if (vRet < 0)
         {
             if (errno == EINTR)
