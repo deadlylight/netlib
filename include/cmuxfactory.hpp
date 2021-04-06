@@ -8,5 +8,5 @@ class IMux;
 class CMuxFactory
 {
 public:
-    static shared_ptr<IMux> createMux(const string &);
+    static shared_ptr<IMux> createMux();
 };
