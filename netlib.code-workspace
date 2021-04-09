@@ -1,0 +1,22 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"memory": "cpp",
+			"istream": "cpp",
+			"tuple": "cpp",
+			"utility": "cpp",
+			"iosfwd": "cpp",
+			"iostream": "cpp",
+			"array": "cpp",
+			"*.tcc": "cpp",
+			"functional": "cpp",
+			"map": "cpp",
+			"chrono": "cpp"
+		}
+	}
+}

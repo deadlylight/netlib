@@ -3,11 +3,11 @@
 
 using namespace std;
 
-class IMsgIn;
+class IMsgOut;
 
 class CMsgFactory
 {
 public:
     CMsgFactory() = delete;
-    static shared_ptr<IMsgIn> createMsg();
+    static shared_ptr<IMsgOut> createMsg();
 };

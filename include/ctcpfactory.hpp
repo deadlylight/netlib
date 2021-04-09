@@ -4,22 +4,22 @@
 
 using namespace std;
 
-class ITcpServer;
-class ITcpAccept;
-class ITcpConn;
-class ITcpRead;
+class IMux;
+class INetStreamAccepter;
+class INetStreamReader;
 
 class CTcpFactory
 {
 public:
     CTcpFactory() = delete;
-    // server handler, port, bind
-    shared_ptr<ITcpServer> createTcpServer(shared_ptr<ITcpAccept>,
-                                           uint16_t,
-                                           string = string());
+    static bool createTcpServer(shared_ptr<IMux>,
+                         shared_ptr<INetStreamAccepter>,
+                         uint16_t,
+                         string = string());
 
-    shared_ptr<ITcpConn> createTcpConn(shared_ptr<ITcpRead>,
-                                       uint16_t,
-                                       string,
-                                       string = string());
+    static bool createTcpConn(shared_ptr<IMux>,
+                       shared_ptr<INetStreamReader>,
+                       uint16_t,
+                       string,
+                       string = string());
 };
