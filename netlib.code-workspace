@@ -16,7 +16,8 @@
 			"*.tcc": "cpp",
 			"functional": "cpp",
 			"map": "cpp",
-			"chrono": "cpp"
+			"chrono": "cpp",
+			"ostream": "cpp"
 		}
 	}
 }
