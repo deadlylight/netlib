@@ -1,14 +1,22 @@
+#include "cnetlibmuximpl.hpp"
 #include "cstreamconnhelper.hpp"
 
 CStreamConnHelper::CStreamConnHelper(shared_ptr<CStreamConn> inStreamConn)
     : mStreamConn(inStreamConn),
       mEnableRead(false),
+      mEnableWrite(false),
       mFd(-1)
 {
+    add2Mux();
 }
 
 CStreamConnHelper::~CStreamConnHelper()
 {
+}
+
+void CStreamConnHelper::add2Mux()
+{
+    CNetLibMuxImpl::getInstance().addMuxObject(shared_from_this());
 }
 
 void CStreamConnHelper::enableRead()
@@ -16,7 +24,7 @@ void CStreamConnHelper::enableRead()
     mEnableRead = true;
 }
 
-bool CStreamConnHelper::write(shared_ptr<CMsgIn> inMsg)
+bool CStreamConnHelper::write(shared_ptr<IMsgIn> inMsg)
 {
     return true;
 }
@@ -41,9 +49,19 @@ int CStreamConnHelper::getFd()
     return mFd;
 }
 
+bool CStreamConnHelper::forRead()
+{
+    return mEnableRead;
+}
+
+bool CStreamConnHelper::forWrite()
+{
+    return mEnableWrite;
+}
+
 void CStreamConnHelper::onRead() 
 {
-
+    
 }
 
 void CStreamConnHelper::onWrite() 

@@ -21,7 +21,11 @@ public:
     {
         cout << __FUNCTION__ << endl;
     }
-    void onRead()
+    void onRead(shared_ptr<IMsgIn>)
+    {
+        cout << __FUNCTION__ << endl;
+    }
+    void onWriteComplete()
     {
         cout << __FUNCTION__ << endl;
     }

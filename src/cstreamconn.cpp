@@ -15,7 +15,7 @@ void CStreamConn::enableRead()
     return mHelper.enableRead();
 }
 
-bool CStreamConn::write(shared_ptr<CMsgIn> in)
+bool CStreamConn::write(shared_ptr<IMsgIn> in)
 {
     return mHelper.write(in);
 }

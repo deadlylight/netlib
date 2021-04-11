@@ -17,4 +17,5 @@ public:
     virtual void onStart() = 0;
     virtual void onStop() = 0;
     virtual void onNewConn() = 0;
+    virtual void onCloseConn() = 0;
 };

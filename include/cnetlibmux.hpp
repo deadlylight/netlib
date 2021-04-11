@@ -4,17 +4,15 @@
 
 using namespace std;
 
-class CNetLibMuxImpl;
-
 class CNetLibMux
 {
+    friend class CNetLibMuxImpl;
+
 private:
-    unique_ptr<CNetLibMuxImpl> mImpl;
     CNetLibMux();
 
 public:
     ~CNetLibMux();
-
     void run();
     static CNetLibMux &getInstance();
 };

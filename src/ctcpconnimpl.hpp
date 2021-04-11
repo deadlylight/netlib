@@ -11,13 +11,13 @@ class CTcpConnImpl
 private:
     CTcpConn &mConn;
     string mRemoteAddr;
-    uint16_t mPort;
+    uint16_t mRemotePort;
     string mLocalAddr;
 
 private:
-    bool connect();
+    void connectIpv4();
 
 public:
-    CTcpConnImpl(CTcpConn &, string inRemoteAddr, uint16_t inPort, string inLocalAddr);
+    CTcpConnImpl(CTcpConn &, string inRemoteAddr, uint16_t inRemotePort, string inLocalAddr);
     ~CTcpConnImpl();
 };

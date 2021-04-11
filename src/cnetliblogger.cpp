@@ -1,6 +1,6 @@
 #include <iostream>
 #include <ctime>
-#include <cassert>
+#include <netlibassert.hpp>
 #include <cstdarg>
 #include <cnetliblogger.hpp>
 
@@ -46,7 +46,7 @@ void CNetLibLogger::log(ELogLevel inLevel, const char *inFmt, ...)
 {
     if (inLevel >= ELogMax)
     {
-        assert(0);
+        nl_assert(0);
         return;
     }
     if (inLevel > sLogLevel)

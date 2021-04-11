@@ -5,7 +5,7 @@
 using namespace std;
 
 class CStreamConn;
-class CMsgIn;
+class IMsgIn;
 
 class CStreamConnHelper : public IMuxObject, public enable_shared_from_this<CStreamConnHelper>
 {
@@ -14,19 +14,25 @@ class CStreamConnHelper : public IMuxObject, public enable_shared_from_this<CStr
 private:
     shared_ptr<CStreamConn> mStreamConn;
     bool mEnableRead;
+    bool mEnableWrite;
     int mFd;
+
+private:
+    void add2Mux();
 
 public:
     CStreamConnHelper(shared_ptr<CStreamConn>);
     ~CStreamConnHelper();
 
     void enableRead();
-    bool write(shared_ptr<CMsgIn>);
+    bool write(shared_ptr<IMsgIn>);
     void setConnTimeout(uint32_t);
     void setIoTimeout(uint32_t);
     void setIdleTimeout(uint32_t);
 
     int getFd() override;
+    bool forRead() override;
+    bool forWrite() override;
     void onRead() override;
     void onWrite() override;
     void onError() override;
